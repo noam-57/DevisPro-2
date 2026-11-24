@@ -1,0 +1,11 @@
+create extension if not exists pgcrypto;
+create table if not exists public.profiles (id uuid primary key references auth.users(id) on delete cascade, company_name text, address text, phone text, email text, siret text, vat_number text, updated_at timestamptz default now());
+create table if not exists public.clients (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, name text not null, email text, phone text, address text, created_at timestamptz default now());
+create table if not exists public.quotes (id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade, number text not null, client_id uuid references public.clients(id) on delete set null, client_name text not null, issue_date date not null default current_date, status text not null default 'draft' check(status in ('draft','sent','accepted','rejected')), items jsonb not null default '[]'::jsonb, total_ht numeric(12,2) not null default 0, total_vat numeric(12,2) not null default 0, total_ttc numeric(12,2) not null default 0, notes text, created_at timestamptz default now(), unique(user_id,number));
+alter table public.profiles enable row level security; alter table public.clients enable row level security; alter table public.quotes enable row level security;
+drop policy if exists "profile own read" on public.profiles; drop policy if exists "profile own insert" on public.profiles; drop policy if exists "profile own update" on public.profiles; drop policy if exists "clients own access" on public.clients; drop policy if exists "quotes own access" on public.quotes;
+create policy "profile own read" on public.profiles for select using(auth.uid()=id);
+create policy "profile own insert" on public.profiles for insert with check(auth.uid()=id);
+create policy "profile own update" on public.profiles for update using(auth.uid()=id) with check(auth.uid()=id);
+create policy "clients own access" on public.clients for all using(auth.uid()=user_id) with check(auth.uid()=user_id);
+create policy "quotes own access" on public.quotes for all using(auth.uid()=user_id) with check(auth.uid()=user_id);
