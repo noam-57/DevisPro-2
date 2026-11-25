@@ -1,6 +1,97 @@
- "use client";
-import {useState} from "react"; import {supabase} from "../../../lib/supabase"; import {jsPDF} from "jspdf";
-export default function NewQuote(){const [client,setClient]=useState("");const [desc,setDesc]=useState("");const [qty,setQty]=useState(1);const [price,setPrice]=useState(0);const [vat,setVat]=useState(20);const [msg,setMsg]=useState("");const ht=qty*price;const tax=ht*vat/100;const ttc=ht+tax;
-async function save(){if(!supabase){setMsg("Configure Supabase d'abord.");return}const {data}=await supabase.auth.getUser();if(!data.user){setMsg("Connecte-toi d'abord.");return}const number="DEV-"+Date.now().toString().slice(-8);const {error}=await supabase.from("quotes").insert({user_id:data.user.id,number,client_name:client,items:[{description:desc,quantity:qty,unit_price:price,vat}],total_ht:ht,total_vat:tax,total_ttc:ttc});setMsg(error?.message||"Devis enregistré.");}
-function pdf(){const d=new jsPDF();d.setFontSize(20);d.text("DevisPro - Devis",20,20);d.setFontSize(12);d.text("Client : "+client,20,38);d.text("Prestation : "+desc,20,50);d.text("Quantité : "+qty+" | Prix unitaire HT : "+price.toFixed(2)+" €",20,62);d.text("Total HT : "+ht.toFixed(2)+" €",20,80);d.text("TVA : "+tax.toFixed(2)+" €",20,90);d.text("Total TTC : "+ttc.toFixed(2)+" €",20,100);d.save("devis.pdf")}
-return <main className="wrap"><a href="/dashboard">← Tableau de bord</a><h1>Nouveau devis</h1><div className="card"><label>Nom du client</label><input value={client} onChange={e=>setClient(e.target.value)}/><label>Description</label><input value={desc} onChange={e=>setDesc(e.target.value)}/><label>Quantité</label><input type="number" value={qty} onChange={e=>setQty(Number(e.target.value))}/><label>Prix unitaire HT (€)</label><input type="number" value={price} onChange={e=>setPrice(Number(e.target.value))}/><label>TVA (%)</label><input type="number" value={vat} onChange={e=>setVat(Number(e.target.value))}/><h3>Total HT : {ht.toFixed(2)} €</h3><h3>TVA : {tax.toFixed(2)} €</h3><h2>Total TTC : {ttc.toFixed(2)} €</h2><button className="btn" onClick={save}>Enregistrer</button> <button className="btn" onClick={pdf}>Exporter en PDF</button><p>{msg}</p></div></main>}
+
+"use client";
+
+import { useState } from "react";
+import { supabase } from "./supabase";
+import { jsPDF } from "jspdf";
+
+export default function NewQuote() {
+  const [client, setClient] = useState("");
+  const [desc, setDesc] = useState("");
+  const [qty, setQty] = useState(1);
+  const [price, setPrice] = useState(0);
+  const [vat, setVat] = useState(20);
+  const [msg, setMsg] = useState("");
+
+  const ht = qty * price;
+  const tax = ht * vat / 100;
+  const ttc = ht + tax;
+
+  async function save() {
+    if (!supabase) {
+      setMsg("Configure Supabase d'abord.");
+      return;
+    }
+
+    const { data } = await supabase.auth.getUser();
+
+    if (!data.user) {
+      setMsg("Connecte-toi d'abord.");
+      return;
+    }
+
+    const number = "DEV-" + Date.now().toString().slice(-8);
+
+    const { error } = await supabase.from("quotes").insert({
+      user_id: data.user.id,
+      number,
+      client_name: client,
+      items: [{
+        description: desc,
+        quantity: qty,
+        unit_price: price,
+        vat
+      }],
+      total_ht: ht,
+      total_vat: tax,
+      total_ttc: ttc
+    });
+
+    setMsg(error?.message || "Devis enregistré.");
+  }
+
+  function pdf() {
+    const d = new jsPDF();
+    d.setFontSize(20);
+    d.text("DevisPro - Devis", 20, 20);
+    d.setFontSize(12);
+    d.text("Client : " + client, 20, 38);
+    d.text("Prestation : " + desc, 20, 50);
+    d.text("Quantité : " + qty + " | Prix unitaire HT : " + price.toFixed(2) + " €", 20, 62);
+    d.text("Total HT : " + ht.toFixed(2) + " €", 20, 80);
+    d.text("TVA : " + tax.toFixed(2) + " €", 20, 90);
+    d.text("Total TTC : " + ttc.toFixed(2) + " €", 20, 100);
+    d.save("devis.pdf");
+  }
+
+  return (
+    <main className="wrap">
+      <a href="/dashboard">← Tableau de bord</a>
+      <h1>Nouveau devis</h1>
+      <div className="card">
+        <label>Nom du client</label>
+        <input value={client} onChange={e => setClient(e.target.value)} />
+
+        <label>Description</label>
+        <input value={desc} onChange={e => setDesc(e.target.value)} />
+
+        <label>Quantité</label>
+        <input type="number" value={qty} onChange={e => setQty(Number(e.target.value))} />
+
+        <label>Prix unitaire HT (€)</label>
+        <input type="number" value={price} onChange={e => setPrice(Number(e.target.value))} />
+
+        <label>TVA (%)</label>
+        <input type="number" value={vat} onChange={e => setVat(Number(e.target.value))} />
+
+        <h3>Total HT : {ht.toFixed(2)} €</h3>
+        <h3>TVA : {tax.toFixed(2)} €</h3>
+        <h2>Total TTC : {ttc.toFixed(2)} €</h2>
+
+        <button className="btn" onClick={save}>Enregistrer</button>
+        <button className="btn" onClick={pdf}>Exporter en PDF</button>
+        <p>{msg}</p>
+      </div>
+    </main>
+  );
+}
